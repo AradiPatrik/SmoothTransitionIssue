@@ -1,17 +1,28 @@
-# Issue description
-When using concatenating media source the video freezes for a while the next video is loaded when using clipped video.
-Using `ClippingConfiguration.setStartsAtKeyframe` solves this. I want our users to be able to set precise clipping for their edited videos thus I can't use this solution.
+# ExoPlayer Image-to-Video Transition Jank
 
-Below is a screen recording of this behavior:
+## **Issue Overview**
+This repository demonstrates an issue in ExoPlayer where transitioning from an image to a video causes a noticeable jank (~200ms delay). This issue is problematic for real-time video editing applications that require seamless playback.
 
-https://github.com/user-attachments/assets/83b96de5-8456-4483-95f4-097d643cd538
+## **Reproducing the Issue**
+1. Clone this repository and run the app.
+2. Check the logs to observe the playback delay.
+3. Compare the transitions:
+    - **Video to Video:** Smooth playback.
+    - **Image to Video:** ~200ms jank.
+    - **Video to Image:** No jank.
+4. **Key Observation:** Removing the audio track from the videos eliminates the jank completely, even on the first playback.
 
-Notice when the bunny cracks it's neck the frame freezes for around half a second. In my app I don't want this to happen.
+## **Findings**
+- The issue occurs when transitioning from an **image** (using `MediaItem.setImageDurationMs()`) to a **video**.
+- Using **MediaCodec video renderer prewarming** helps with smooth video playback but does not fix the image-to-video transition issue.
+- **Converting images to short videos** using the Media3 Transformer library does **not** resolve the issue.
+- **Silencing the audio** in videos removes the jank entirely.
 
-I have been seaching github issues and have found this issue
-* https://github.com/google/ExoPlayer/issues/10408
+## **Expected Behavior**
+- Image-to-video transitions should be as smooth as video-to-video transitions, regardless of whether the videos have an audio track.
 
-The proposed solution there was manually disabling codec flushing. I did as suggested but that seem to have just break things (the next video was blank, video player stuck)
+## **Possible Cause**
+- It appears that ExoPlayer handles image-to-video transitions differently when an audio track is present, causing a delay.
 
-Could you please provide guidance on how to start preloading the next media item while one is playing so transition can be smooth. Could you please give me a place to begin from?
-Should I create custom MediaSources or Renderers? I saw there's a PreloadingMediaSource in the library can that help with this issue?
+## **Minimal Reproduction**
+- This repository contains a minimal example that isolates the problem. To test different scenarios, uncomment the relevant sections in `MainActivity.kt`.
